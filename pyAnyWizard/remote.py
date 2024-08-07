@@ -1,10 +1,41 @@
-from wizard_logging import logging, WizardLogger
+import requests
+from abc import ABC, abstractmethod
+from typing import Generator
 
+from wizard_logging import logging, WizardLogger
 logger:WizardLogger = logging.getLogger('PyAnywhereAccess')
 
-import requests
 
-class PyAnywhere:
+class ServerBase(ABC):
+    @abstractmethod
+    def verify(self):
+        """  Returns true if the connection worked - otherwise raise an ConnetionRefusedError
+        """
+        return NotImplemented
+
+    @abstractmethod
+    def consoles(self, console_type:str, name_match:str) -> Generator[tuple[str, str], None, None]:
+        """Enumerate the consoles available on this connection
+            Generates a tuple with the console name and unique id (both strings)
+        """
+        return NotImplemented
+
+    @abstractmethod
+    def apps(self) -> Generator[str, None, None]:
+        """Enumerates the Web apps on this server"""
+        return NotImplemented
+
+    def send_to_console(self, console_type:str, console_name:str, commands:list[str]) -> Generator[str, None, None]:
+        """Send the command list to the console one command at a time
+            Generate the output for each command"""
+        return NotImplemented
+
+    def get_console_output(self, console_name:str, console_id:str) -> Generator[str, None, None]:
+        """Retrieve the current console output as displayed"""
+        return NotImplemented
+
+
+class PyAnyWhere(ServerBase):
     """Basic class to allow PythonAnywhere access"""
     def __init__(self, **kwargs):
         self.username: str = ''
@@ -47,6 +78,15 @@ class PyAnywhere:
             return True
         else:
             raise ConnectionRefusedError(f'Unable to connect to PythonAnywhere - status code {response.status_code}')
+
+    def apps(self) -> Generator[str, None, None]:
+        """Enumerate all of the Web apps on this server"""
+        response = self._get('webapps')
+        if response.status_code != 200:
+            raise ConnectionError(f'Unable to enumerate Webapps : error {response.status_code}')
+
+        for app in response.json():
+            yield app
 
     def consoles(self, console_type: str = '', name_match: str = ''):
         """Enumerate the consoles available on this connection"""
