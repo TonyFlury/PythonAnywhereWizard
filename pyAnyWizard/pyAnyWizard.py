@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # coding=utf-8
 """
     PythonAnywhereWizard.pyAnyWizard :
@@ -22,7 +22,7 @@ from io import TextIOWrapper
 from configparser import ConfigParser
 
 from wizard_logging import logging, logging_levels,WizardLogger
-from py_anywhere_access import PyAnywhere
+from remote import PyAnyWhere
 from pprint import pprint
 
 CONFIG_FILE = 'pyAnyWizard.cfg'
@@ -63,7 +63,7 @@ def main( config: TextIOWrapper = None, verbose=0):
 
     e: Exception
     try:
-        py_anywhere_access = PyAnywhere(**cfg['PythonAnywhere'])
+        py_anywhere_access = PyAnyWhere(**cfg['PythonAnywhere'])
     except (AttributeError, ValueError) as e :
         logger.critical(f'Error with pythonAnywhere config : {str(e)} - Aborting')
         click.secho(f'PythonAnywhereWizard : {str(e)} - wizard unable to continue - aborting', fg='red')
@@ -74,6 +74,8 @@ def main( config: TextIOWrapper = None, verbose=0):
     except ConnectionRefusedError as e:
         logger.critical(f'Unable to verify connection to PythonAnywhere : {str(e)} - Aborting')
         click.secho(f'PythonAnywhereWizard : {str(e)} - wizard unable to continue - aborting', fg='red')
+
+    print(list(py_anywhere_access.apps()))
 
     print(dict(list(x for x in py_anywhere_access.consoles_for_apps())))
 
